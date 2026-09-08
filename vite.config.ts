@@ -11,8 +11,8 @@ export default defineConfig({
         name: 'Guía AIFA',
         short_name: 'Guía AIFA',
         description: 'Tu asistente de orientación en el AIFA',
-        theme_color: '#0d4f47',
-        background_color: '#f4f1e8',
+        theme_color: '#173b70',
+        background_color: '#f2f5fa',
         display: 'standalone',
         start_url: '/',
         lang: 'es-MX',
@@ -24,4 +24,3 @@ export default defineConfig({
     })
   ]
 })
-
