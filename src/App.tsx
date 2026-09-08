@@ -18,8 +18,8 @@ import {
   Utensils,
   X,
 } from 'lucide-react'
+import { airportDirectoryNotice, getAssistantResponse } from './services/assistant'
 
-type Category = 'puerta' | 'baños' | 'comida' | 'migración'
 type Message = { id: number; from: 'assistant' | 'user'; text: string }
 
 const quickActions: Array<{ label: string; prompt: string; icon: typeof Plane; color: string }> = [
@@ -34,37 +34,6 @@ const suggested = [
   '¿Cómo llego al Mexibús?',
   'Necesito asistencia especial',
 ]
-
-const responses: Record<Category | 'default', string> = {
-  puerta:
-    '¡Con gusto! Para ubicar tu puerta necesito el número de vuelo o la puerta indicada en tu pase de abordar. Puedes escribirme, por ejemplo: “Puerta 108”.',
-  baños:
-    'Los baños más cercanos están a unos 2 minutos, junto al módulo de información del pasillo central. Sigue la señalización azul. También hay sanitarios accesibles y cambiadores.',
-  comida:
-    'Encontrarás restaurantes y cafeterías en la zona comercial del nivel 2. La opción más cercana está a 4 minutos. ¿Buscas café, comida rápida o un lugar para sentarte?',
-  migración:
-    'Migración se encuentra después del filtro de seguridad, siguiendo las señales moradas de “Llegadas internacionales”. Desde el vestíbulo principal toma aproximadamente 8 minutos.',
-  default:
-    'Estoy aquí para orientarte. Puedo ayudarte a encontrar puertas, baños, comida, transporte, migración y otros servicios del aeropuerto. ¿Qué necesitas ubicar?',
-}
-
-function getResponse(input: string) {
-  const normalized = input.toLocaleLowerCase('es-MX')
-  if (/puerta|abordaje|vuelo/.test(normalized)) return responses.puerta
-  if (/baño|sanitario/.test(normalized)) return responses.baños
-  if (/comida|restaurante|caf[eé]|hambre/.test(normalized)) return responses.comida
-  if (/migraci[oó]n|aduana|internacional/.test(normalized)) return responses.migración
-  if (/mexib[uú]s|transporte|salir|taxi/.test(normalized)) {
-    return 'El Mexibús y los taxis autorizados se encuentran en la planta baja, saliendo por las puertas 1 y 2. Sigue las señales turquesa de “Transporte terrestre”.'
-  }
-  if (/equipaje|documentar|maleta/.test(normalized)) {
-    return 'Los mostradores de documentación están en el nivel de salidas. Busca la pantalla de tu aerolínea para identificar la isla asignada; si me dices tu aerolínea puedo orientarte mejor.'
-  }
-  if (/asistencia|silla|discapacidad|especial/.test(normalized)) {
-    return 'Claro. Hay módulos de asistencia en cada acceso principal. Si requieres silla de ruedas, acércate al mostrador de tu aerolínea o al módulo de información más cercano.'
-  }
-  return responses.default
-}
 
 export default function App() {
   const [messages, setMessages] = useState<Message[]>([
@@ -93,7 +62,7 @@ export default function App() {
     window.setTimeout(() => {
       setMessages((current) => [
         ...current,
-        { id: Date.now() + 1, from: 'assistant', text: getResponse(clean) },
+        { id: Date.now() + 1, from: 'assistant', text: getAssistantResponse(clean) },
       ])
       setIsTyping(false)
     }, 650)
@@ -203,6 +172,7 @@ export default function App() {
                 </button>
               </form>
               <p className="privacy-note">No compartas información personal o sensible.</p>
+              <p className="directory-note">{airportDirectoryNotice}</p>
             </section>
           </div>
 
@@ -249,4 +219,3 @@ export default function App() {
     </div>
   )
 }
-

@@ -98,6 +98,7 @@ button { cursor: pointer; }
 .send-button { color: white; background: linear-gradient(145deg, #4387fa, #2865e2); transition: opacity .2s; }
 .send-button:disabled { opacity: .38; cursor: default; }
 .privacy-note { color: #9aa5a2; font-size: 9px; text-align: center; margin: 8px 0 13px; }
+.directory-note { margin: -5px 18px 14px; color: #71819a; font-size: 9px; line-height: 1.4; text-align: center; }
 
 .side-column { padding-top: 50px; }
 .info-card, .help-card { background: var(--paper); border: 1px solid #dde5f0; border-radius: 15px; padding: 17px; display: flex; align-items: center; gap: 13px; width: 100%; color: var(--green); }

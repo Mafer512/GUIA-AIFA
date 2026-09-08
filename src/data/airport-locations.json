@@ -1,0 +1,130 @@
+{
+  "metadata": {
+    "airport": "Aeropuerto Internacional Felipe Ángeles",
+    "code": "NLU",
+    "version": "2026-09-08",
+    "notice": "Directorio inicial para demostración. Las ubicaciones marcadas como provisionales deben validarse con la administración del AIFA antes de uso operativo."
+  },
+  "locations": [
+    {
+      "id": "boarding-gates-domestic",
+      "category": "boarding_gate",
+      "name": "Puertas de abordaje nacionales",
+      "zone": "Sala de última espera nacional",
+      "floor": "Nivel de salidas",
+      "description": "Pasa el filtro de seguridad y consulta las pantallas de vuelos para confirmar el número de puerta. Sigue la señalización azul de Salas de última espera.",
+      "keywords": ["puerta", "abordaje", "vuelo nacional", "salida", "sala de espera"],
+      "status": "provisional"
+    },
+    {
+      "id": "boarding-gates-international",
+      "category": "boarding_gate",
+      "name": "Puertas de abordaje internacionales",
+      "zone": "Sala de última espera internacional",
+      "floor": "Nivel de salidas",
+      "description": "Después del filtro de seguridad, continúa hacia el área internacional y confirma tu puerta en las pantallas de vuelos.",
+      "keywords": ["puerta", "abordaje", "vuelo internacional", "salida internacional"],
+      "status": "provisional"
+    },
+    {
+      "id": "restrooms-main-hall",
+      "category": "restroom",
+      "name": "Sanitarios del vestíbulo principal",
+      "zone": "Vestíbulo público central",
+      "floor": "Planta baja",
+      "description": "Desde el acceso principal, avanza hacia el módulo de información central y sigue la señalización de sanitarios.",
+      "keywords": ["baño", "baños", "sanitario", "sanitarios", "cambiador", "accesible"],
+      "status": "provisional"
+    },
+    {
+      "id": "restrooms-departures",
+      "category": "restroom",
+      "name": "Sanitarios de salas de salida",
+      "zone": "Después del filtro de seguridad",
+      "floor": "Nivel de salidas",
+      "description": "Al salir del filtro de seguridad, sigue los pictogramas de sanitarios ubicados en los pasillos de acceso a las salas.",
+      "keywords": ["baño", "sanitario", "salidas", "después de seguridad", "puertas"],
+      "status": "provisional"
+    },
+    {
+      "id": "food-court",
+      "category": "restaurant",
+      "name": "Zona de alimentos y cafeterías",
+      "zone": "Área comercial pública",
+      "floor": "Nivel de salidas",
+      "description": "Dirígete al área comercial del nivel de salidas y sigue los letreros de alimentos y bebidas.",
+      "keywords": ["comida", "restaurante", "restaurantes", "cafetería", "café", "hambre", "alimentos"],
+      "status": "provisional"
+    },
+    {
+      "id": "food-gates",
+      "category": "restaurant",
+      "name": "Alimentos en salas de abordaje",
+      "zone": "Salas de última espera",
+      "floor": "Nivel de salidas, después de seguridad",
+      "description": "Después del filtro, revisa los locales disponibles en el corredor comercial antes de dirigirte a tu puerta.",
+      "keywords": ["comida", "cafetería", "café", "abordaje", "después del filtro"],
+      "status": "provisional"
+    },
+    {
+      "id": "immigration-departures",
+      "category": "immigration",
+      "name": "Control migratorio de salidas",
+      "zone": "Flujo de pasajeros internacionales",
+      "floor": "Nivel de salidas",
+      "description": "Sigue la señalización de vuelos internacionales después de seguridad y prepara pasaporte y pase de abordar.",
+      "keywords": ["migración", "pasaporte", "internacional", "salida", "control migratorio"],
+      "status": "provisional"
+    },
+    {
+      "id": "immigration-arrivals",
+      "category": "immigration",
+      "name": "Control migratorio de llegadas",
+      "zone": "Llegadas internacionales",
+      "floor": "Nivel de llegadas",
+      "description": "Al desembarcar, permanece en el flujo de llegadas internacionales y sigue los letreros de Migración antes de recoger equipaje.",
+      "keywords": ["migración", "pasaporte", "internacional", "llegada", "aduana"],
+      "status": "provisional"
+    },
+    {
+      "id": "checkin-aeromexico",
+      "category": "check_in",
+      "name": "Documentación de Aeroméxico",
+      "zone": "Islas de documentación de aerolíneas",
+      "floor": "Nivel de salidas",
+      "description": "Ve al vestíbulo de salidas y confirma la isla asignada a Aeroméxico en las pantallas de información; la asignación puede cambiar según la operación.",
+      "keywords": ["aeroméxico", "aeromexico", "documentar", "documentación", "facturar", "facturo", "check in", "maleta", "equipaje"],
+      "status": "provisional"
+    },
+    {
+      "id": "checkin-general",
+      "category": "check_in",
+      "name": "Islas de documentación",
+      "zone": "Vestíbulo de salidas",
+      "floor": "Nivel de salidas",
+      "description": "Consulta tu aerolínea y número de vuelo en las pantallas del vestíbulo para identificar la isla de documentación asignada.",
+      "keywords": ["documentar", "documentación", "facturar", "check in", "mostrador", "aerolínea", "equipaje", "maleta"],
+      "status": "provisional"
+    },
+    {
+      "id": "ground-transportation",
+      "category": "transportation",
+      "name": "Transporte terrestre",
+      "zone": "Exterior de la terminal de pasajeros",
+      "floor": "Planta baja, nivel de llegadas",
+      "description": "Desde llegadas, sigue la señalización de transporte terrestre y confirma en el módulo de información el acceso correspondiente a Mexibús, autobuses o taxis autorizados.",
+      "keywords": ["mexibús", "mexibus", "transporte", "autobús", "autobus", "taxi", "salir", "salida"],
+      "status": "provisional"
+    },
+    {
+      "id": "accessibility-assistance",
+      "category": "accessibility",
+      "name": "Módulos de asistencia y accesibilidad",
+      "zone": "Accesos y vestíbulo principal",
+      "floor": "Planta baja",
+      "description": "Solicita apoyo en el módulo de información o en el mostrador de tu aerolínea. Para silla de ruedas conviene avisar también a la aerolínea antes del vuelo.",
+      "keywords": ["asistencia", "accesibilidad", "silla de ruedas", "discapacidad", "movilidad", "ayuda especial"],
+      "status": "provisional"
+    }
+  ]
+}

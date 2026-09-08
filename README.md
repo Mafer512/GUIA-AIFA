@@ -16,12 +16,62 @@ npm run build
 npm run preview
 ```
 
+## Stack actual
+
+- React 19 y TypeScript para la interfaz y la lógica del asistente.
+- Vite 8 para desarrollo y compilación.
+- Lucide React para iconografía.
+- `vite-plugin-pwa` para manifest, caché y service worker.
+- GitHub Actions y GitHub Pages para despliegue estático.
+- JSON local como fuente de datos inicial.
+
+Actualmente no existe un backend, una API propia, autenticación ni una base de datos real.
+
+## Arquitectura
+
+```mermaid
+flowchart TD
+    U[Usuario desde QR] --> P[GitHub Pages]
+    P --> UI[React PWA]
+    UI --> CHAT[Estado y chat en App.tsx]
+    CHAT --> ENGINE[Motor de búsqueda assistant.ts]
+    ENGINE --> DATA[(airport-locations.json)]
+    ENGINE --> CHAT
+    UI --> SW[Service worker y caché PWA]
+    DEV[Push a main] --> GHA[GitHub Actions]
+    GHA --> BUILD[Vite genera dist]
+    BUILD --> P
+
+    FUTURE[Etapa futura] -.-> API[Backend / funciones]
+    API -.-> DB[(Supabase)]
+    API -.-> LLM[LLM con function calling]
+```
+
+## Datos del aeropuerto
+
+El directorio está en `src/data/airport-locations.json`. Cada registro contiene:
+
+- Categoría y nombre.
+- Zona y piso.
+- Descripción para llegar.
+- Palabras clave para búsquedas flexibles.
+- Estado `verified` o `provisional`.
+
+Los registros iniciales están marcados como provisionales y deben validarse con la administración del AIFA antes de usarse como orientación operativa.
+
+`src/services/assistant.ts` normaliza las preguntas, reconoce categorías y palabras clave, puntúa las ubicaciones y construye la respuesta. Los botones y el campo libre usan el mismo motor.
+
 ## Estado actual
 
 - Interfaz adaptable a teléfonos, tabletas y escritorio.
 - Accesos rápidos para consultas comunes.
-- Chat interactivo con respuestas locales de demostración.
+- Chat interactivo que consulta un directorio JSON local.
+- Búsqueda flexible por servicio, aerolínea, zona y palabras clave.
 - Menú lateral, sugerencias y estados de conversación.
 - Manifest y service worker para instalación como PWA.
 
-Las respuestas actuales son demostrativas. El siguiente paso de producto es conectar el chat con una fuente validada de mapas, servicios y vuelos del AIFA, además de un backend conversacional.
+## Evolución recomendada
+
+Conviene mantener esta versión estática mientras se valida el flujo con usuarios y se completa el directorio oficial. GitHub Pages es suficiente para contenido de lectura, bajo costo y cambios poco frecuentes.
+
+La migración a un backend será necesaria antes de manejar vuelos en tiempo real, administración de contenido, analítica identificable o un LLM. En esa etapa, Supabase puede almacenar ubicaciones verificadas y Next.js puede exponer funciones del servidor que validen las llamadas del modelo. El LLM no debe consultar tablas directamente: debe usar funciones limitadas como `buscar_ubicacion`, `consultar_vuelo` y `calcular_ruta`.
