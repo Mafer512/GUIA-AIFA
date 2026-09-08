@@ -1,10 +1,12 @@
 import { FormEvent, useEffect, useRef, useState } from 'react'
 import {
   ArrowRight,
+  ArrowLeft,
+  Accessibility,
   Bath,
   Bot,
+  BusFront,
   ChevronRight,
-  CircleHelp,
   Clock3,
   Coffee,
   Languages,
@@ -20,6 +22,7 @@ import {
   Volume2,
   X,
 } from 'lucide-react'
+import AssistantAvatar from './components/AssistantAvatar'
 import { getAirportDirectoryNotice, getAssistantResponse } from './services/assistant'
 import type { Language } from './types/airport'
 
@@ -63,6 +66,12 @@ const translations = {
     send: 'Enviar mensaje',
     greeting: '¡Hola! Soy tu guía en el AIFA. Dime a dónde quieres ir y te acompaño paso a paso.',
     unread: 'Nueva respuesta',
+    splashEyebrow: 'BIENVENIDO AL AIFA',
+    splashTitle: '¿Necesitas ayuda?',
+    splashText: 'Pregúntame lo que necesites. Estoy aquí para orientarte.',
+    splashAction: 'Comenzar',
+    previousOptions: 'Opciones anteriores',
+    nextOptions: 'Más opciones',
   },
   en: {
     brandTagline: 'Making your journey easier',
@@ -101,6 +110,12 @@ const translations = {
     send: 'Send message',
     greeting: 'Hello! I am your AIFA guide. Tell me where you want to go and I will guide you step by step.',
     unread: 'New response',
+    splashEyebrow: 'WELCOME TO AIFA',
+    splashTitle: 'Need some help?',
+    splashText: 'Ask me anything you need. I am here to guide you.',
+    splashAction: 'Get started',
+    previousOptions: 'Previous options',
+    nextOptions: 'More options',
   },
 } as const
 
@@ -129,6 +144,18 @@ const quickActions = [
     icon: ShieldCheck,
     color: 'green',
   },
+  {
+    label: { es: 'Mexibús', en: 'Mexibus' },
+    prompt: { es: '¿Cómo llego al Mexibús?', en: 'How do I get to the Mexibus?' },
+    icon: BusFront,
+    color: 'purple',
+  },
+  {
+    label: { es: 'Asistencia', en: 'Assistance' },
+    prompt: { es: 'Necesito asistencia especial', en: 'I need special assistance' },
+    icon: Accessibility,
+    color: 'pink',
+  },
 ] as const
 
 const suggested = {
@@ -145,9 +172,9 @@ const menuItems = [
 ] as const
 
 export default function App() {
-  const [language, setLanguage] = useState<Language>('es')
+  const [language, setLanguage] = useState<Language>(() => localStorage.getItem('aifa-language') === 'en' ? 'en' : 'es')
   const [messages, setMessages] = useState<Message[]>([
-    { id: 1, from: 'assistant', text: translations.es.greeting },
+    { id: 1, from: 'assistant', text: translations[language].greeting },
   ])
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
@@ -155,7 +182,10 @@ export default function App() {
   const [chatOpen, setChatOpen] = useState(() => window.location.hash === '#assistant')
   const [hasUnread, setHasUnread] = useState(false)
   const [speakingMessageId, setSpeakingMessageId] = useState<number | null>(null)
+  const [showSplash, setShowSplash] = useState(() => sessionStorage.getItem('aifa-splash-seen') !== 'true')
+  const [carouselPaused, setCarouselPaused] = useState(false)
   const chatEnd = useRef<HTMLDivElement>(null)
+  const carouselRef = useRef<HTMLDivElement>(null)
   const chatOpenRef = useRef(chatOpen)
   const requestIdRef = useRef(0)
   const ui = translations[language]
@@ -177,6 +207,45 @@ export default function App() {
 
   useEffect(() => () => window.speechSynthesis?.cancel(), [])
 
+  useEffect(() => {
+    if (!showSplash) return
+    const timer = window.setTimeout(() => {
+      setShowSplash(false)
+      sessionStorage.setItem('aifa-splash-seen', 'true')
+    }, 1800)
+    return () => window.clearTimeout(timer)
+  }, [showSplash])
+
+  useEffect(() => {
+    if (carouselPaused || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const interval = window.setInterval(() => {
+      const carousel = carouselRef.current
+      const firstCard = carousel?.firstElementChild as HTMLElement | null
+      if (!carousel || !firstCard) return
+      const gap = Number.parseFloat(getComputedStyle(carousel).columnGap) || 0
+      const step = firstCard.getBoundingClientRect().width + gap
+      const atEnd = carousel.scrollLeft + carousel.clientWidth >= carousel.scrollWidth - 4
+      carousel.scrollTo({ left: atEnd ? 0 : carousel.scrollLeft + step, behavior: 'smooth' })
+    }, 4500)
+    return () => window.clearInterval(interval)
+  }, [carouselPaused])
+
+  const dismissSplash = () => {
+    setShowSplash(false)
+    sessionStorage.setItem('aifa-splash-seen', 'true')
+  }
+
+  const pauseCarousel = () => setCarouselPaused(true)
+
+  const moveCarousel = (direction: -1 | 1) => {
+    pauseCarousel()
+    const carousel = carouselRef.current
+    const firstCard = carousel?.firstElementChild as HTMLElement | null
+    if (!carousel || !firstCard) return
+    const gap = Number.parseFloat(getComputedStyle(carousel).columnGap) || 0
+    carousel.scrollBy({ left: direction * (firstCard.getBoundingClientRect().width + gap), behavior: 'smooth' })
+  }
+
   const openAssistant = () => {
     setChatOpen(true)
     setHasUnread(false)
@@ -194,6 +263,7 @@ export default function App() {
     window.speechSynthesis?.cancel()
     setSpeakingMessageId(null)
     setLanguage(nextLanguage)
+    localStorage.setItem('aifa-language', nextLanguage)
     setMessages([{ id: Date.now(), from: 'assistant', text: translations[nextLanguage].greeting }])
     setInput('')
     setIsTyping(false)
@@ -302,11 +372,21 @@ export default function App() {
                   <span className="eyebrow">{ui.quickEyebrow}</span>
                   <h2 id="quick-title">{ui.quickTitle}</h2>
                 </div>
-                <Sparkles className="sparkle" size={24} />
+                <div className="carousel-controls">
+                  <button onClick={() => moveCarousel(-1)} aria-label={ui.previousOptions}><ArrowLeft size={18} /></button>
+                  <button onClick={() => moveCarousel(1)} aria-label={ui.nextOptions}><ArrowRight size={18} /></button>
+                </div>
               </div>
-              <div className="quick-grid">
+              <div
+                className="quick-carousel"
+                ref={carouselRef}
+                onPointerDown={pauseCarousel}
+                onWheel={pauseCarousel}
+                role="list"
+                aria-label={ui.quickTitle}
+              >
                 {quickActions.map(({ label, prompt, icon: Icon, color }) => (
-                  <button className="quick-card" key={label.es} onClick={() => ask(prompt[language])}>
+                  <button className="quick-card" role="listitem" key={label.es} onClick={() => ask(prompt[language])}>
                     <span className={`quick-icon ${color}`}><Icon size={24} /></span>
                     <span>{label[language]}</span>
                     <ChevronRight size={17} className="quick-arrow" />
@@ -317,7 +397,7 @@ export default function App() {
 
             <section className="assistant-teaser" aria-labelledby="assistant-teaser-title">
               <div className="teaser-bot" aria-hidden="true">
-                <span className="bot-orbit"><Plane size={27} /></span>
+                <AssistantAvatar size="medium" />
                 <span className="bot-spark"><Sparkles size={13} /></span>
               </div>
               <div className="teaser-copy">
@@ -343,11 +423,6 @@ export default function App() {
               <button onClick={() => ask(quickActions[0].prompt[language])}>{ui.findGate} <ArrowRight size={17} /></button>
               <Coffee className="tip-illustration" size={85} strokeWidth={1.2} />
             </div>
-            <button className="help-card" onClick={() => ask(language === 'es' ? 'Necesito asistencia especial' : 'I need special assistance')}>
-              <CircleHelp size={23} />
-              <span><strong>{ui.helpTitle}</strong><small>{ui.helpText}</small></span>
-              <ChevronRight size={19} />
-            </button>
           </aside>
         </section>
       </main>
@@ -360,7 +435,7 @@ export default function App() {
       {chatOpen && (
         <section className="assistant-panel" role="dialog" aria-modal="true" aria-labelledby="chat-title">
           <div className="chat-header">
-            <div className="avatar"><Plane size={20} /></div>
+            <AssistantAvatar size="small" />
             <div>
               <h2 id="chat-title">{ui.chatTitle}</h2>
               <span className="online"><i /> {ui.online}</span>
@@ -371,7 +446,7 @@ export default function App() {
           <div className="messages" aria-live="polite">
             {messages.map((message) => (
               <div className={`message-row ${message.from}`} key={message.id}>
-                {message.from === 'assistant' && <div className="mini-avatar"><Plane size={14} /></div>}
+                {message.from === 'assistant' && <AssistantAvatar size="mini" />}
                 <div className="message-stack">
                   <div className="message-bubble">{message.text}</div>
                   {message.from === 'assistant' && speechSupported && (
@@ -390,7 +465,7 @@ export default function App() {
             ))}
             {isTyping && (
               <div className="message-row assistant">
-                <div className="mini-avatar"><Plane size={14} /></div>
+                <AssistantAvatar size="mini" />
                 <div className="message-bubble typing"><i /><i /><i /></div>
               </div>
             )}
@@ -425,10 +500,25 @@ export default function App() {
         aria-label={chatOpen ? ui.closeChat : ui.openChat}
         aria-expanded={chatOpen}
       >
-        <span className="fab-icon">{chatOpen ? <X size={27} /> : <Plane size={27} />}</span>
+        <span className="fab-icon">{chatOpen ? <X size={27} /> : <AssistantAvatar size="small" />}</span>
         {!chatOpen && <span className="fab-label">{ui.chatTitle}</span>}
         {hasUnread && <span className="unread-dot"><span className="sr-only">{ui.unread}</span></span>}
       </button>
+
+      {showSplash && (
+        <div className="splash-screen" role="status" aria-live="polite" onClick={dismissSplash}>
+          <div className="splash-glow splash-glow-one" />
+          <div className="splash-glow splash-glow-two" />
+          <div className="splash-content" onClick={(event) => event.stopPropagation()}>
+            <AssistantAvatar size="large" />
+            <span className="splash-eyebrow">{ui.splashEyebrow}</span>
+            <h1>{ui.splashTitle}</h1>
+            <p>{ui.splashText}</p>
+            <button onClick={dismissSplash}>{ui.splashAction}<ArrowRight size={18} /></button>
+            <span className="splash-progress" aria-hidden="true"><i /></span>
+          </div>
+        </div>
+      )}
 
       {menuOpen && (
         <div className="menu-backdrop" onClick={() => setMenuOpen(false)}>

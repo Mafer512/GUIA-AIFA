@@ -33,6 +33,9 @@ Actualmente no existe un backend, una API propia, autenticación ni una base de 
 flowchart TD
     U[Usuario desde QR] --> P[GitHub Pages]
     P --> UI[React PWA]
+    UI --> SPLASH[Bienvenida breve]
+    UI --> CAROUSEL[Carrusel de accesos rápidos]
+    UI --> AVATAR[Avatar SVG reutilizable]
     UI --> CHAT[Estado y chat en App.tsx]
     UI --> I18N[Interfaz ES / EN]
     CHAT --> ENGINE[Motor de búsqueda assistant.ts]
@@ -70,6 +73,9 @@ Los registros iniciales están marcados como provisionales y deben validarse con
 - Accesos rápidos para consultas comunes.
 - Chat interactivo que consulta un directorio JSON local.
 - Chat flotante adaptable que se abre desde un botón de acceso persistente.
+- Bienvenida automática de 1.8 segundos con salida inmediata opcional.
+- Avatar SVG compartido entre bienvenida, botón flotante y conversación.
+- Carrusel táctil con seis consultas, autoavance y pausa tras interacción manual.
 - Búsqueda flexible bilingüe por servicio, aerolínea, zona y palabras clave.
 - Interfaz completa en español e inglés.
 - Lectura de respuestas mediante la API nativa `SpeechSynthesis`.
@@ -84,6 +90,8 @@ Los registros iniciales están marcados como provisionales y deben validarse con
 | ![Interfaz anterior en móvil](docs/visual-comparison/before-mobile.png) | ![Interfaz nueva en móvil](docs/visual-comparison/after-mobile.png) |
 
 El panel móvil abierto se documenta en [esta captura](docs/visual-comparison/after-mobile-chat.png). También se verificó el [estado con viewport reducido por teclado](docs/visual-comparison/after-mobile-keyboard.png).
+
+La nueva pantalla de bienvenida se muestra en [esta captura móvil](docs/visual-comparison/splash-mobile.png).
 
 ## Evolución recomendada
 
