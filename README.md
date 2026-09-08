@@ -34,9 +34,11 @@ flowchart TD
     U[Usuario desde QR] --> P[GitHub Pages]
     P --> UI[React PWA]
     UI --> CHAT[Estado y chat en App.tsx]
+    UI --> I18N[Interfaz ES / EN]
     CHAT --> ENGINE[Motor de búsqueda assistant.ts]
-    ENGINE --> DATA[(airport-locations.json)]
+    ENGINE --> DATA[(airport-locations.json ES / EN)]
     ENGINE --> CHAT
+    CHAT --> VOICE[SpeechSynthesis del navegador]
     UI --> SW[Service worker y caché PWA]
     DEV[Push a main] --> GHA[GitHub Actions]
     GHA --> BUILD[Vite genera dist]
@@ -56,6 +58,7 @@ El directorio está en `src/data/airport-locations.json`. Cada registro contiene
 - Descripción para llegar.
 - Palabras clave para búsquedas flexibles.
 - Estado `verified` o `provisional`.
+- Campos equivalentes en inglés: `name_en`, `zone_en`, `floor_en`, `description_en` y `keywords_en`.
 
 Los registros iniciales están marcados como provisionales y deben validarse con la administración del AIFA antes de usarse como orientación operativa.
 
@@ -66,9 +69,21 @@ Los registros iniciales están marcados como provisionales y deben validarse con
 - Interfaz adaptable a teléfonos, tabletas y escritorio.
 - Accesos rápidos para consultas comunes.
 - Chat interactivo que consulta un directorio JSON local.
-- Búsqueda flexible por servicio, aerolínea, zona y palabras clave.
+- Chat flotante adaptable que se abre desde un botón de acceso persistente.
+- Búsqueda flexible bilingüe por servicio, aerolínea, zona y palabras clave.
+- Interfaz completa en español e inglés.
+- Lectura de respuestas mediante la API nativa `SpeechSynthesis`.
 - Menú lateral, sugerencias y estados de conversación.
 - Manifest y service worker para instalación como PWA.
+
+## Comparación visual
+
+| Antes | Después |
+| --- | --- |
+| ![Interfaz anterior en escritorio](docs/visual-comparison/before-desktop.png) | ![Interfaz nueva en escritorio](docs/visual-comparison/after-desktop.png) |
+| ![Interfaz anterior en móvil](docs/visual-comparison/before-mobile.png) | ![Interfaz nueva en móvil](docs/visual-comparison/after-mobile.png) |
+
+El panel móvil abierto se documenta en [esta captura](docs/visual-comparison/after-mobile-chat.png). También se verificó el [estado con viewport reducido por teclado](docs/visual-comparison/after-mobile-keyboard.png).
 
 ## Evolución recomendada
 

@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useRef, useState } from 'react'
 import {
   ArrowRight,
   Bath,
+  Bot,
   ChevronRight,
   CircleHelp,
   Clock3,
@@ -9,63 +10,215 @@ import {
   Languages,
   MapPin,
   Menu,
-  Mic,
   Navigation,
   Plane,
   Send,
   ShieldCheck,
   Sparkles,
+  Square,
   Utensils,
+  Volume2,
   X,
 } from 'lucide-react'
-import { airportDirectoryNotice, getAssistantResponse } from './services/assistant'
+import { getAirportDirectoryNotice, getAssistantResponse } from './services/assistant'
+import type { Language } from './types/airport'
 
 type Message = { id: number; from: 'assistant' | 'user'; text: string }
 
-const quickActions: Array<{ label: string; prompt: string; icon: typeof Plane; color: string }> = [
-  { label: 'Mi puerta', prompt: '¿Dónde está mi puerta de abordaje?', icon: Plane, color: 'coral' },
-  { label: 'Baños', prompt: '¿Dónde están los baños más cercanos?', icon: Bath, color: 'blue' },
-  { label: 'Comida', prompt: 'Quiero encontrar restaurantes y cafeterías', icon: Utensils, color: 'gold' },
-  { label: 'Migración', prompt: '¿Cómo llego a migración?', icon: ShieldCheck, color: 'green' },
-]
+const translations = {
+  es: {
+    brandTagline: 'Tu viaje, más sencillo',
+    location: 'Estás en el AIFA',
+    heroFirst: '¿A dónde',
+    heroAccent: 'quieres llegar?',
+    heroText: 'Te ayudo a moverte por el aeropuerto de forma fácil, rápida y sin complicaciones.',
+    quickEyebrow: 'ACCESOS RÁPIDOS',
+    quickTitle: '¿Qué estás buscando?',
+    assistantEyebrow: 'TU GUÍA DIGITAL',
+    assistantTitle: 'Orientación en un solo mensaje',
+    assistantText: 'Pregunta con tus propias palabras. Te ayudaré a encontrar servicios y zonas dentro del aeropuerto.',
+    openAssistant: 'Abrir asistente',
+    timeEyebrow: 'TIEMPO ESTIMADO',
+    security: 'Filtro de seguridad',
+    estimate: 'Entre 10 y 15 minutos',
+    tipEyebrow: 'TIP DEL VIAJERO',
+    tipTitle: 'Ten a la mano tu pase de abordar',
+    tipText: 'Así podré ayudarte a ubicar tu puerta y encontrar la mejor ruta.',
+    findGate: 'Buscar mi puerta',
+    helpTitle: '¿Necesitas ayuda especial?',
+    helpText: 'Accesibilidad y asistencia',
+    menuEyebrow: 'MENÚ',
+    menuTitle: 'Todo lo que necesitas',
+    footer: 'Guía AIFA · Información de orientación',
+    emergency: 'En una emergencia, acércate al personal del aeropuerto.',
+    chatTitle: 'Asistente AIFA',
+    online: 'En línea · Listo para ayudarte',
+    suggested: 'Preguntas sugeridas',
+    placeholder: 'Escribe tu pregunta…',
+    privacy: 'No compartas información personal o sensible.',
+    closeChat: 'Cerrar asistente',
+    openChat: 'Abrir asistente AIFA',
+    listen: 'Escuchar respuesta',
+    stopListening: 'Detener lectura',
+    send: 'Enviar mensaje',
+    greeting: '¡Hola! Soy tu guía en el AIFA. Dime a dónde quieres ir y te acompaño paso a paso.',
+    unread: 'Nueva respuesta',
+  },
+  en: {
+    brandTagline: 'Making your journey easier',
+    location: 'You are at AIFA',
+    heroFirst: 'Where do you',
+    heroAccent: 'want to go?',
+    heroText: 'I help you move around the airport easily, quickly, and without complications.',
+    quickEyebrow: 'QUICK ACCESS',
+    quickTitle: 'What are you looking for?',
+    assistantEyebrow: 'YOUR DIGITAL GUIDE',
+    assistantTitle: 'Directions in one message',
+    assistantText: 'Ask in your own words. I will help you find services and areas inside the airport.',
+    openAssistant: 'Open assistant',
+    timeEyebrow: 'ESTIMATED TIME',
+    security: 'Security checkpoint',
+    estimate: 'About 10 to 15 minutes',
+    tipEyebrow: 'TRAVEL TIP',
+    tipTitle: 'Keep your boarding pass handy',
+    tipText: 'This helps me locate your gate and find the best route.',
+    findGate: 'Find my gate',
+    helpTitle: 'Need special assistance?',
+    helpText: 'Accessibility and assistance',
+    menuEyebrow: 'MENU',
+    menuTitle: 'Everything you need',
+    footer: 'AIFA Guide · Wayfinding information',
+    emergency: 'In an emergency, contact airport staff.',
+    chatTitle: 'AIFA Assistant',
+    online: 'Online · Ready to help',
+    suggested: 'Suggested questions',
+    placeholder: 'Type your question…',
+    privacy: 'Do not share personal or sensitive information.',
+    closeChat: 'Close assistant',
+    openChat: 'Open AIFA assistant',
+    listen: 'Listen to response',
+    stopListening: 'Stop reading',
+    send: 'Send message',
+    greeting: 'Hello! I am your AIFA guide. Tell me where you want to go and I will guide you step by step.',
+    unread: 'New response',
+  },
+} as const
 
-const suggested = [
-  '¿Dónde documento mi equipaje?',
-  '¿Cómo llego al Mexibús?',
-  'Necesito asistencia especial',
-]
+const quickActions = [
+  {
+    label: { es: 'Mi puerta', en: 'My gate' },
+    prompt: { es: '¿Dónde está mi puerta de abordaje?', en: 'Where is my boarding gate?' },
+    icon: Plane,
+    color: 'coral',
+  },
+  {
+    label: { es: 'Baños', en: 'Restrooms' },
+    prompt: { es: '¿Dónde están los baños más cercanos?', en: 'Where are the nearest restrooms?' },
+    icon: Bath,
+    color: 'blue',
+  },
+  {
+    label: { es: 'Comida', en: 'Food' },
+    prompt: { es: 'Quiero encontrar restaurantes y cafeterías', en: 'I want to find restaurants and coffee shops' },
+    icon: Utensils,
+    color: 'gold',
+  },
+  {
+    label: { es: 'Migración', en: 'Immigration' },
+    prompt: { es: '¿Cómo llego a migración?', en: 'How do I get to immigration?' },
+    icon: ShieldCheck,
+    color: 'green',
+  },
+] as const
+
+const suggested = {
+  es: ['¿Dónde documento mi equipaje?', '¿Cómo llego al Mexibús?', 'Necesito asistencia especial'],
+  en: ['Where do I check my baggage?', 'How do I get to the Mexibus?', 'I need special assistance'],
+}
+
+const menuItems = [
+  { label: { es: 'Mapa del aeropuerto', en: 'Airport map' }, prompt: { es: 'Necesito el mapa del aeropuerto', en: 'I need the airport map' } },
+  { label: { es: 'Vuelos', en: 'Flights' }, prompt: { es: 'Necesito información sobre vuelos', en: 'I need flight information' } },
+  { label: { es: 'Transporte', en: 'Transportation' }, prompt: { es: 'Necesito información sobre transporte', en: 'I need transportation information' } },
+  { label: { es: 'Servicios', en: 'Services' }, prompt: { es: '¿Qué servicios puedo encontrar?', en: 'What services can I find?' } },
+  { label: { es: 'Contacto', en: 'Contact' }, prompt: { es: 'Necesito contactar al personal del aeropuerto', en: 'I need to contact airport staff' } },
+] as const
 
 export default function App() {
+  const [language, setLanguage] = useState<Language>('es')
   const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 1,
-      from: 'assistant',
-      text: '¡Hola! Soy tu guía en el AIFA. Dime a dónde quieres ir y te acompaño paso a paso.',
-    },
+    { id: 1, from: 'assistant', text: translations.es.greeting },
   ])
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [language, setLanguage] = useState<'ES' | 'EN'>('ES')
+  const [chatOpen, setChatOpen] = useState(() => window.location.hash === '#assistant')
+  const [hasUnread, setHasUnread] = useState(false)
+  const [speakingMessageId, setSpeakingMessageId] = useState<number | null>(null)
   const chatEnd = useRef<HTMLDivElement>(null)
+  const chatOpenRef = useRef(chatOpen)
+  const requestIdRef = useRef(0)
+  const ui = translations[language]
+  const speechSupported = typeof window !== 'undefined' && 'speechSynthesis' in window
+
+  useEffect(() => {
+    chatOpenRef.current = chatOpen
+    document.body.classList.toggle('assistant-open', chatOpen)
+    if (chatOpen) setHasUnread(false)
+  }, [chatOpen])
+
+  useEffect(() => {
+    document.documentElement.lang = language === 'es' ? 'es-MX' : 'en-US'
+  }, [language])
 
   useEffect(() => {
     chatEnd.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isTyping])
+  }, [messages, isTyping, chatOpen])
+
+  useEffect(() => () => window.speechSynthesis?.cancel(), [])
+
+  const openAssistant = () => {
+    setChatOpen(true)
+    setHasUnread(false)
+  }
+
+  const closeAssistant = () => {
+    setChatOpen(false)
+    window.speechSynthesis?.cancel()
+    setSpeakingMessageId(null)
+  }
+
+  const changeLanguage = (nextLanguage: Language) => {
+    if (nextLanguage === language) return
+    requestIdRef.current += 1
+    window.speechSynthesis?.cancel()
+    setSpeakingMessageId(null)
+    setLanguage(nextLanguage)
+    setMessages([{ id: Date.now(), from: 'assistant', text: translations[nextLanguage].greeting }])
+    setInput('')
+    setIsTyping(false)
+  }
 
   const ask = (text: string) => {
     const clean = text.trim()
     if (!clean || isTyping) return
+    const activeLanguage = language
+    const activeRequest = ++requestIdRef.current
+    openAssistant()
     setMessages((current) => [...current, { id: Date.now(), from: 'user', text: clean }])
     setInput('')
     setIsTyping(true)
+
     window.setTimeout(() => {
+      if (requestIdRef.current !== activeRequest) return
+      const response = getAssistantResponse(clean, activeLanguage)
       setMessages((current) => [
         ...current,
-        { id: Date.now() + 1, from: 'assistant', text: getAssistantResponse(clean) },
+        { id: Date.now() + 1, from: 'assistant', text: response },
       ])
       setIsTyping(false)
-    }, 650)
+      if (!chatOpenRef.current) setHasUnread(true)
+    }, 500)
   }
 
   const submit = (event: FormEvent) => {
@@ -73,21 +226,53 @@ export default function App() {
     ask(input)
   }
 
+  const toggleSpeech = (message: Message) => {
+    if (!speechSupported) return
+    window.speechSynthesis.cancel()
+
+    if (speakingMessageId === message.id) {
+      setSpeakingMessageId(null)
+      return
+    }
+
+    const utterance = new SpeechSynthesisUtterance(message.text)
+    utterance.lang = language === 'es' ? 'es-MX' : 'en-US'
+    const preferredVoice = window.speechSynthesis
+      .getVoices()
+      .find((voice) => voice.lang.toLowerCase().startsWith(language))
+    if (preferredVoice) utterance.voice = preferredVoice
+    utterance.rate = 0.96
+    utterance.onstart = () => setSpeakingMessageId(message.id)
+    utterance.onend = () => setSpeakingMessageId(null)
+    utterance.onerror = () => setSpeakingMessageId(null)
+    window.speechSynthesis.speak(utterance)
+  }
+
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${chatOpen ? 'chat-open' : ''}`}>
       <header className="topbar">
-        <a className="brand" href="#inicio" aria-label="Inicio Guía AIFA">
+        <a className="brand" href="#inicio" aria-label="Guía AIFA">
           <span className="brand-mark"><Plane size={22} strokeWidth={2.4} /></span>
           <span>
             <strong>Guía AIFA</strong>
-            <small>Tu viaje, más sencillo</small>
+            <small>{ui.brandTagline}</small>
           </span>
         </a>
         <div className="header-actions">
-          <button className="language-button" onClick={() => setLanguage(language === 'ES' ? 'EN' : 'ES')}>
-            <Languages size={17} /> {language}
-          </button>
-          <button className="menu-button" aria-label="Abrir menú" onClick={() => setMenuOpen(true)}>
+          <div className="language-selector" aria-label="Language / Idioma">
+            <Languages size={16} aria-hidden="true" />
+            {(['es', 'en'] as Language[]).map((option) => (
+              <button
+                key={option}
+                className={language === option ? 'active' : ''}
+                onClick={() => changeLanguage(option)}
+                aria-pressed={language === option}
+              >
+                {option.toUpperCase()}
+              </button>
+            ))}
+          </div>
+          <button className="menu-button" aria-label={ui.menuTitle} onClick={() => setMenuOpen(true)}>
             <Menu size={23} />
           </button>
         </div>
@@ -98,9 +283,9 @@ export default function App() {
           <div className="hero-orbit orbit-one" />
           <div className="hero-orbit orbit-two" />
           <div className="hero-content">
-            <div className="location-pill"><MapPin size={15} /> Estás en el AIFA</div>
-            <h1>¿A dónde<br /><em>quieres llegar?</em></h1>
-            <p>Te ayudo a moverte por el aeropuerto de forma fácil, rápida y sin complicaciones.</p>
+            <div className="location-pill"><MapPin size={15} /> {ui.location}</div>
+            <h1>{ui.heroFirst}<br /><em>{ui.heroAccent}</em></h1>
+            <p>{ui.heroText}</p>
           </div>
           <div className="hero-route" aria-hidden="true">
             <span className="route-dot" />
@@ -114,83 +299,53 @@ export default function App() {
             <section className="quick-section" aria-labelledby="quick-title">
               <div className="section-heading">
                 <div>
-                  <span className="eyebrow">ACCESOS RÁPIDOS</span>
-                  <h2 id="quick-title">¿Qué estás buscando?</h2>
+                  <span className="eyebrow">{ui.quickEyebrow}</span>
+                  <h2 id="quick-title">{ui.quickTitle}</h2>
                 </div>
                 <Sparkles className="sparkle" size={24} />
               </div>
               <div className="quick-grid">
                 {quickActions.map(({ label, prompt, icon: Icon, color }) => (
-                  <button className="quick-card" key={label} onClick={() => ask(prompt)}>
+                  <button className="quick-card" key={label.es} onClick={() => ask(prompt[language])}>
                     <span className={`quick-icon ${color}`}><Icon size={24} /></span>
-                    <span>{label}</span>
+                    <span>{label[language]}</span>
                     <ChevronRight size={17} className="quick-arrow" />
                   </button>
                 ))}
               </div>
             </section>
 
-            <section className="chat-card" aria-labelledby="chat-title">
-              <div className="chat-header">
-                <div className="avatar"><Navigation size={20} /></div>
-                <div>
-                  <h2 id="chat-title">Asistente AIFA</h2>
-                  <span className="online"><i /> En línea · Listo para ayudarte</span>
-                </div>
+            <section className="assistant-teaser" aria-labelledby="assistant-teaser-title">
+              <div className="teaser-bot" aria-hidden="true">
+                <span className="bot-orbit"><Plane size={27} /></span>
+                <span className="bot-spark"><Sparkles size={13} /></span>
               </div>
-
-              <div className="messages" aria-live="polite">
-                {messages.map((message) => (
-                  <div className={`message-row ${message.from}`} key={message.id}>
-                    {message.from === 'assistant' && <div className="mini-avatar"><Navigation size={14} /></div>}
-                    <div className="message-bubble">{message.text}</div>
-                  </div>
-                ))}
-                {isTyping && (
-                  <div className="message-row assistant">
-                    <div className="mini-avatar"><Navigation size={14} /></div>
-                    <div className="message-bubble typing"><i /><i /><i /></div>
-                  </div>
-                )}
-                <div ref={chatEnd} />
+              <div className="teaser-copy">
+                <span className="eyebrow">{ui.assistantEyebrow}</span>
+                <h2 id="assistant-teaser-title">{ui.assistantTitle}</h2>
+                <p>{ui.assistantText}</p>
               </div>
-
-              <div className="suggestions" aria-label="Preguntas sugeridas">
-                {suggested.map((item) => <button key={item} onClick={() => ask(item)}>{item}</button>)}
-              </div>
-
-              <form className="chat-form" onSubmit={submit}>
-                <button type="button" className="mic-button" aria-label="Hablar"><Mic size={20} /></button>
-                <input
-                  value={input}
-                  onChange={(event) => setInput(event.target.value)}
-                  placeholder="Escribe tu pregunta…"
-                  aria-label="Escribe tu pregunta"
-                />
-                <button className="send-button" type="submit" aria-label="Enviar mensaje" disabled={!input.trim() || isTyping}>
-                  <Send size={18} />
-                </button>
-              </form>
-              <p className="privacy-note">No compartas información personal o sensible.</p>
-              <p className="directory-note">{airportDirectoryNotice}</p>
+              <button className="primary-button" onClick={openAssistant}>
+                <Bot size={18} /> {ui.openAssistant} <ArrowRight size={17} />
+              </button>
             </section>
           </div>
 
           <aside className="side-column">
             <div className="info-card">
               <div className="info-icon"><Clock3 size={22} /></div>
-              <div><small>TIEMPO ESTIMADO</small><strong>Filtro de seguridad</strong><span>Entre 10 y 15 minutos</span></div>
+              <div><small>{ui.timeEyebrow}</small><strong>{ui.security}</strong><span>{ui.estimate}</span></div>
             </div>
             <div className="tip-card">
-              <span className="eyebrow">TIP DEL VIAJERO</span>
-              <h3>Ten a la mano tu pase de abordar</h3>
-              <p>Así podré ayudarte a ubicar tu puerta y calcular la mejor ruta.</p>
-              <button onClick={() => ask('¿Dónde está mi puerta de abordaje?')}>Buscar mi puerta <ArrowRight size={17} /></button>
+              <span className="eyebrow">{ui.tipEyebrow}</span>
+              <h3>{ui.tipTitle}</h3>
+              <p>{ui.tipText}</p>
+              <button onClick={() => ask(quickActions[0].prompt[language])}>{ui.findGate} <ArrowRight size={17} /></button>
               <Coffee className="tip-illustration" size={85} strokeWidth={1.2} />
             </div>
-            <button className="help-card" onClick={() => ask('Necesito asistencia especial')}>
+            <button className="help-card" onClick={() => ask(language === 'es' ? 'Necesito asistencia especial' : 'I need special assistance')}>
               <CircleHelp size={23} />
-              <span><strong>¿Necesitas ayuda especial?</strong><small>Accesibilidad y asistencia</small></span>
+              <span><strong>{ui.helpTitle}</strong><small>{ui.helpText}</small></span>
               <ChevronRight size={19} />
             </button>
           </aside>
@@ -198,19 +353,92 @@ export default function App() {
       </main>
 
       <footer>
-        <span>Guía AIFA · Información de orientación</span>
-        <span>En una emergencia, acércate al personal del aeropuerto.</span>
+        <span>{ui.footer}</span>
+        <span>{ui.emergency}</span>
       </footer>
+
+      {chatOpen && (
+        <section className="assistant-panel" role="dialog" aria-modal="true" aria-labelledby="chat-title">
+          <div className="chat-header">
+            <div className="avatar"><Plane size={20} /></div>
+            <div>
+              <h2 id="chat-title">{ui.chatTitle}</h2>
+              <span className="online"><i /> {ui.online}</span>
+            </div>
+            <button className="panel-close" onClick={closeAssistant} aria-label={ui.closeChat}><X size={21} /></button>
+          </div>
+
+          <div className="messages" aria-live="polite">
+            {messages.map((message) => (
+              <div className={`message-row ${message.from}`} key={message.id}>
+                {message.from === 'assistant' && <div className="mini-avatar"><Plane size={14} /></div>}
+                <div className="message-stack">
+                  <div className="message-bubble">{message.text}</div>
+                  {message.from === 'assistant' && speechSupported && (
+                    <button
+                      className={`speak-button ${speakingMessageId === message.id ? 'speaking' : ''}`}
+                      onClick={() => toggleSpeech(message)}
+                      aria-label={speakingMessageId === message.id ? ui.stopListening : ui.listen}
+                      title={speakingMessageId === message.id ? ui.stopListening : ui.listen}
+                    >
+                      {speakingMessageId === message.id ? <Square size={12} fill="currentColor" /> : <Volume2 size={15} />}
+                      <span>{speakingMessageId === message.id ? ui.stopListening : ui.listen}</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+            {isTyping && (
+              <div className="message-row assistant">
+                <div className="mini-avatar"><Plane size={14} /></div>
+                <div className="message-bubble typing"><i /><i /><i /></div>
+              </div>
+            )}
+            <div ref={chatEnd} />
+          </div>
+
+          <div className="chat-composer">
+            <div className="suggestions" aria-label={ui.suggested}>
+              {suggested[language].map((item) => <button key={item} onClick={() => ask(item)}>{item}</button>)}
+            </div>
+            <form className="chat-form" onSubmit={submit}>
+              <input
+                value={input}
+                onChange={(event) => setInput(event.target.value)}
+                placeholder={ui.placeholder}
+                aria-label={ui.placeholder}
+                autoComplete="off"
+              />
+              <button className="send-button" type="submit" aria-label={ui.send} disabled={!input.trim() || isTyping}>
+                <Send size={18} />
+              </button>
+            </form>
+            <p className="privacy-note">{ui.privacy}</p>
+            <p className="directory-note">{getAirportDirectoryNotice(language)}</p>
+          </div>
+        </section>
+      )}
+
+      <button
+        className={`assistant-fab ${hasUnread ? 'has-unread' : ''}`}
+        onClick={() => chatOpen ? closeAssistant() : openAssistant()}
+        aria-label={chatOpen ? ui.closeChat : ui.openChat}
+        aria-expanded={chatOpen}
+      >
+        <span className="fab-icon">{chatOpen ? <X size={27} /> : <Plane size={27} />}</span>
+        {!chatOpen && <span className="fab-label">{ui.chatTitle}</span>}
+        {hasUnread && <span className="unread-dot"><span className="sr-only">{ui.unread}</span></span>}
+      </button>
 
       {menuOpen && (
         <div className="menu-backdrop" onClick={() => setMenuOpen(false)}>
           <aside className="drawer" onClick={(event) => event.stopPropagation()}>
-            <button className="drawer-close" onClick={() => setMenuOpen(false)} aria-label="Cerrar menú"><X /></button>
-            <span className="eyebrow">MENÚ</span>
-            <h2>Todo lo que necesitas</h2>
-            {['Mapa del aeropuerto', 'Vuelos', 'Transporte', 'Servicios', 'Contacto'].map((item) => (
-              <button key={item} onClick={() => { ask(`Necesito información sobre ${item}`); setMenuOpen(false) }}>
-                {item}<ChevronRight size={18} />
+            <button className="drawer-close" onClick={() => setMenuOpen(false)} aria-label={ui.closeChat}><X /></button>
+            <span className="eyebrow">{ui.menuEyebrow}</span>
+            <h2>{ui.menuTitle}</h2>
+            {menuItems.map((item) => (
+              <button key={item.label.es} onClick={() => { ask(item.prompt[language]); setMenuOpen(false) }}>
+                {item.label[language]}<ChevronRight size={18} />
               </button>
             ))}
           </aside>
